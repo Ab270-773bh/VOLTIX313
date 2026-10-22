@@ -52,31 +52,23 @@ function escapeHTML(value) {
     "'": "&#39;"
   })[c]);
 }
-
 async function initializeSupabase() {
   try {
-    if (!window.supabase?.createClient) {
-      await new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src =
-          "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js";
-        script.onload = resolve;
-        script.onerror = () =>
-          reject(new Error("تعذر تحميل مكتبة Supabase. تحقق من الإنترنت أو جرّب لاحقاً."));
-        document.head.appendChild(script);
-      });
+    const { createClient } = await import(
+      "https://esm.sh/@supabase/supabase-js@2"
+    );
+
+    if (typeof createClient !== "function") {
+      throw new Error("تعذر تحميل createClient");
     }
 
-    if (!window.supabase?.createClient) {
-      throw new Error("مكتبة Supabase لم توفر createClient.");
-    }
-
-    supabase = window.supabase.createClient(
+    supabase = createClient(
       SUPABASE_URL,
       SUPABASE_PUBLISHABLE_KEY
     );
 
     const { data, error } = await supabase.auth.getSession();
+
     if (error) throw error;
 
     currentUser = data.session?.user || null;
@@ -87,14 +79,13 @@ async function initializeSupabase() {
 
     toast("تم الاتصال بـ Supabase");
     return true;
-  } catch (error) {
+  } catch (e) {
+    console.error("Supabase connection error:", e);
     supabase = null;
-    console.error("Supabase initialization error:", error);
-    toast("خطأ الاتصال: " + (error?.message || String(error)));
+    toast("خطأ الاتصال: " + (e?.message || String(e)));
     return false;
   }
 }
-
 function requireClient() {
   if (!supabase) {
     toast("الاتصال غير جاهز. حدّث الصفحة وحاول مجدداً.");
