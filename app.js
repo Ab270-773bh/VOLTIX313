@@ -37,6 +37,46 @@ function toast(message) {
 
 async function initializeSupabase() {
   try {
+    if (!window.supabase?.createClient) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src =
+          "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js";
+        script.onload = resolve;
+        script.onerror = () =>
+          reject(new Error("تعذر تحميل مكتبة Supabase من الإنترنت"));
+        document.head.appendChild(script);
+      });
+    }
+
+    if (!window.supabase?.createClient) {
+      throw new Error("مكتبة Supabase لم توفر createClient");
+    }
+
+    supabase = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY
+    );
+
+    const { data, error } = await supabase.auth.getSession();
+
+    if (error) throw error;
+
+    currentUser = data.session?.user || null;
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      currentUser = session?.user || null;
+    });
+
+    toast("تم الاتصال بـ Supabase");
+    return true;
+  } catch (e) {
+    console.error("Supabase connection error:", e);
+    toast("خطأ الاتصال: " + (e?.message || String(e)));
+    return false;
+  }
+}
+  try {
     if (!window.supabase) {
       await new Promise((resolve, reject) => {
         const script = document.createElement("script");
