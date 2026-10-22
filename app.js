@@ -62,9 +62,7 @@ async function initializeSupabase() {
     });
 
     return true;
-  } catch (e) {
-    console.error(e);
-    toast("تعذر الاتصال؛ تحقق من الإنترنت وإعدادات Supabase");
+  } catch (e) {toast("خطأ الاتصال: " + (e?.message || String(e)));
     return false;
   }
 }
